@@ -17,7 +17,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Rust with WASM targets
+      - name: Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-wasip2
@@ -26,17 +26,14 @@ jobs:
         run: |
           cargo build --release --target wasm32-wasip2
 
-      - name: Stage Release Binaries
+      - name: Prepare Release Assets
         run: |
           mkdir -p dist
-          cp target/wasm32-wasip2/release/rainy_essentials.wasm dist/ || true
-          cp target/wasm32-wasip2/release/rainy_rtp.wasm dist/ || true
-          cp target/wasm32-wasip2/release/rainy_economy.wasm dist/ || true
-          cp target/wasm32-wasip2/release/rainy_protection.wasm dist/ || true
-          cp target/wasm32-wasip2/release/rainy_chat.wasm dist/ || true
+          find target/wasm32-wasip2/release/ -maxdepth 1 -name "*.wasm" -exec cp {} dist/ \;
+          ls -la dist/
 
       - name: Create or Update GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0
           name: "RainyMCS Official Plugins v1.0.0"
@@ -45,10 +42,10 @@ jobs:
           files: dist/*.wasm
           body: |
             ## RainyMCS Official WASM Plugins
-            Official WebAssembly plugins compiled for the Pumpkin (Rust) server engine.
+            Compiled WebAssembly component plugins for the RainyMCS Minecraft server.
 
-            - `rainy_essentials.wasm` - /spawn, /home, /sethome, welcome messages
-            - `rainy_rtp.wasm` - /rtp wilderness random teleportation
-            - `rainy_economy.wasm` - /bal, /balance, wallet system
-            - `rainy_protection.wasm` - /claim, spawn protection
-            - `rainy_chat.wasm` - /broadcast, chat tags and formatting
+            - `rainy_essentials.wasm` (/spawn, /home, /sethome)
+            - `rainy_rtp.wasm` (/rtp, /wild)
+            - `rainy_economy.wasm` (/bal, /balance)
+            - `rainy_protection.wasm` (/claim)
+            - `rainy_chat.wasm` (/broadcast, /bc)

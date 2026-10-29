@@ -1,68 +1,61 @@
-use std::sync::Arc;
-use async_trait::async_trait;
-
-use pumpkin::{
-    command::{
-        args::ConsumedArgs,
-        tree::CommandTree,
-        CommandExecutor, CommandResult, CommandSender,
-    },
-    plugin::Context,
-    server::Server,
+use pumpkin_plugin_api::{
+    command::{Command, CommandError},
+    commands::CommandHandler,
+    common::NamedColor,
+    permission::{Permission, PermissionDefault},
+    text::TextComponent,
+    Context, Plugin, PluginMetadata, register_plugin,
 };
-use pumpkin_api_macros::{plugin_impl, plugin_method};
-use pumpkin_util::permission::{Permission, PermissionDefault};
-use pumpkin_util::text::{color::NamedColor, TextComponent};
 
-struct BroadcastCommandExecutor;
+struct BroadcastCommandHandler;
 
-#[async_trait]
-impl CommandExecutor for BroadcastCommandExecutor {
-    fn execute<'a>(
-        &'a self,
-        sender: &'a CommandSender,
-        _: &'a Server,
-        _: &'a ConsumedArgs<'a>,
-    ) -> CommandResult<'a> {
-        Box::pin(async move {
-            sender
-                .send_message(
-                    TextComponent::text("📢 [ANNOUNCEMENT] Welcome to the server!")
-                        .color_named(NamedColor::Gold),
-                )
-                .await;
-            Ok(())
-        })
+impl CommandHandler for BroadcastCommandHandler {
+    fn handle(
+        &self,
+        sender: pumpkin_plugin_api::command::CommandSender,
+        _server: pumpkin_plugin_api::Server,
+        _args: pumpkin_plugin_api::command::ConsumedArgs,
+    ) -> pumpkin_plugin_api::Result<i32, CommandError> {
+        let msg = TextComponent::text("📢 [ANNOUNCEMENT] Welcome to the server!")
+            .color_named(NamedColor::Gold);
+        sender.send_message(msg);
+        Ok(0)
     }
 }
 
-#[plugin_method]
-async fn on_load(&mut self, server: Arc<Context>) -> Result<(), String> {
-    server.init_log();
-    log::info!("[RainyChat] Loading chat formatting & tools v1.0.0...");
+struct RainyChat;
 
-    let broadcast_cmd = CommandTree::new(["broadcast", "bc"], "Send a server-wide announcement")
-        .execute(BroadcastCommandExecutor);
-    let perm = Permission::new("rainy.broadcast", "Use broadcast", PermissionDefault::Allow);
+impl Plugin for RainyChat {
+    fn new() -> Self {
+        RainyChat
+    }
 
-    server.register_permission(perm).await?;
-    server.register_command(broadcast_cmd, "rainy.broadcast").await;
+    fn metadata(&self) -> PluginMetadata {
+        PluginMetadata {
+            name: "rainy-chat".into(),
+            version: "1.0.0".into(),
+            authors: vec!["RainyMCS Team".into()],
+            description: "Server announcement /broadcast and chat tools".into(),
+            dependencies: vec![],
+            permissions: vec![],
+        }
+    }
 
-    log::info!("[RainyChat] Registered /broadcast!");
-    Ok(())
-}
+    fn on_load(&mut self, context: Context) -> pumpkin_plugin_api::Result<()> {
+        let perm_bc = "rainy.broadcast";
+        let _ = context.register_permission(&Permission {
+            node: perm_bc.into(),
+            description: "Access /broadcast".into(),
+            default: PermissionDefault::Allow,
+            children: Vec::new(),
+        });
+        let bc_cmd = Command::new(&["broadcast".to_string(), "bc".to_string()], "Broadcast announcement")
+            .execute(BroadcastCommandHandler);
+        context.register_command(bc_cmd, perm_bc);
 
-#[plugin_impl]
-pub struct RainyChat {}
-
-impl RainyChat {
-    pub fn new() -> Self {
-        RainyChat {}
+        tracing::info!("[RainyChat] Loaded /broadcast!");
+        Ok(())
     }
 }
 
-impl Default for RainyChat {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+register_plugin!(RainyChat);

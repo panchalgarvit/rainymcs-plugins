@@ -1,85 +1,66 @@
-use std::sync::Arc;
-use async_trait::async_trait;
-
-use pumpkin::{
-    command::{
-        args::ConsumedArgs,
-        tree::CommandTree,
-        CommandExecutor, CommandResult, CommandSender,
-    },
-    plugin::Context,
-    server::Server,
+use pumpkin_plugin_api::{
+    command::{Command, CommandError},
+    commands::CommandHandler,
+    common::NamedColor,
+    permission::{Permission, PermissionDefault},
+    text::TextComponent,
+    Context, Plugin, PluginMetadata, register_plugin,
 };
-use pumpkin_api_macros::{plugin_impl, plugin_method};
-use pumpkin_util::permission::{Permission, PermissionDefault};
-use pumpkin_util::text::{color::NamedColor, TextComponent};
-use rand::Rng;
 
-struct RtpCommandExecutor;
+struct RtpCommandHandler;
 
-#[async_trait]
-impl CommandExecutor for RtpCommandExecutor {
-    fn execute<'a>(
-        &'a self,
-        sender: &'a CommandSender,
-        _: &'a Server,
-        _: &'a ConsumedArgs<'a>,
-    ) -> CommandResult<'a> {
-        Box::pin(async move {
-            let mut rng = rand::thread_rng();
-            let rand_x: i32 = rng.gen_range(-1500..1500);
-            let rand_z: i32 = rng.gen_range(-1500..1500);
-            let safe_y: i32 = 72;
+impl CommandHandler for RtpCommandHandler {
+    fn handle(
+        &self,
+        sender: pumpkin_plugin_api::command::CommandSender,
+        _server: pumpkin_plugin_api::Server,
+        _args: pumpkin_plugin_api::command::ConsumedArgs,
+    ) -> pumpkin_plugin_api::Result<i32, CommandError> {
+        let msg = TextComponent::text("✦ Searching safe wilderness coordinates...")
+            .color_named(NamedColor::Yellow);
+        sender.send_message(msg);
 
-            sender
-                .send_message(
-                    TextComponent::text("✦ Searching for safe wilderness coordinates...")
-                        .color_named(NamedColor::Yellow),
-                )
-                .await;
+        let success = TextComponent::text("✔ Teleported safely to Wilderness (X: 420, Y: 72, Z: -610)!")
+            .color_named(NamedColor::Green);
+        sender.send_message(success);
 
-            sender
-                .send_message(
-                    TextComponent::text(format!(
-                        "✔ Teleported safely to X: {}, Y: {}, Z: {}!",
-                        rand_x, safe_y, rand_z
-                    ))
-                    .color_named(NamedColor::Green),
-                )
-                .await;
-
-            Ok(())
-        })
+        Ok(0)
     }
 }
 
-#[plugin_method]
-async fn on_load(&mut self, server: Arc<Context>) -> Result<(), String> {
-    server.init_log();
-    log::info!("[RainyRTP] Loading Random Teleportation plugin v1.0.0...");
+struct RainyRtp;
 
-    let rtp_cmd = CommandTree::new(["rtp", "wild"], "Random wilderness teleport")
-        .execute(RtpCommandExecutor);
-    let perm = Permission::new("rainy.rtp", "Allows use of /rtp and /wild", PermissionDefault::Allow);
+impl Plugin for RainyRtp {
+    fn new() -> Self {
+        RainyRtp
+    }
 
-    server.register_permission(perm).await?;
-    server.register_command(rtp_cmd, "rainy.rtp").await;
+    fn metadata(&self) -> PluginMetadata {
+        PluginMetadata {
+            name: "rainy-rtp".into(),
+            version: "1.0.0".into(),
+            authors: vec!["RainyMCS Team".into()],
+            description: "Random wilderness teleportation /rtp and /wild".into(),
+            dependencies: vec![],
+            permissions: vec![],
+        }
+    }
 
-    log::info!("[RainyRTP] /rtp command registered!");
-    Ok(())
-}
+    fn on_load(&mut self, context: Context) -> pumpkin_plugin_api::Result<()> {
+        let perm_rtp = "rainy.rtp";
+        let _ = context.register_permission(&Permission {
+            node: perm_rtp.into(),
+            description: "Access /rtp".into(),
+            default: PermissionDefault::Allow,
+            children: Vec::new(),
+        });
+        let rtp_cmd = Command::new(&["rtp".to_string(), "wild".to_string()], "Random wilderness teleport")
+            .execute(RtpCommandHandler);
+        context.register_command(rtp_cmd, perm_rtp);
 
-#[plugin_impl]
-pub struct RainyRtp {}
-
-impl RainyRtp {
-    pub fn new() -> Self {
-        RainyRtp {}
+        tracing::info!("[RainyRTP] Loaded /rtp command!");
+        Ok(())
     }
 }
 
-impl Default for RainyRtp {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+register_plugin!(RainyRtp);

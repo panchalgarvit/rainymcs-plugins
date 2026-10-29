@@ -1,78 +1,65 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use async_trait::async_trait;
-
-use pumpkin::{
-    command::{
-        args::ConsumedArgs,
-        tree::CommandTree,
-        CommandExecutor, CommandResult, CommandSender,
-    },
-    plugin::Context,
-    server::Server,
+use pumpkin_plugin_api::{
+    command::{Command, CommandError},
+    commands::CommandHandler,
+    common::NamedColor,
+    permission::{Permission, PermissionDefault},
+    text::TextComponent,
+    Context, Plugin, PluginMetadata, register_plugin,
 };
-use pumpkin_api_macros::{plugin_impl, plugin_method};
-use pumpkin_util::permission::{Permission, PermissionDefault};
-use pumpkin_util::text::{color::NamedColor, TextComponent};
 
-lazy_static::lazy_static! {
-    static ref BALANCES: Arc<Mutex<HashMap<String, u64>>> = Arc::new(Mutex::new(HashMap::new()));
-}
+struct BalanceCommandHandler;
 
-struct BalanceCommandExecutor;
-
-#[async_trait]
-impl CommandExecutor for BalanceCommandExecutor {
-    fn execute<'a>(
-        &'a self,
-        sender: &'a CommandSender,
-        _: &'a Server,
-        _: &'a ConsumedArgs<'a>,
-    ) -> CommandResult<'a> {
-        Box::pin(async move {
-            let balance = 250; // Starter balance
-            sender
-                .send_message(
-                    TextComponent::text("💰 Your Balance: ")
-                        .color_named(NamedColor::Gold)
-                        .add_child(
-                            TextComponent::text(format!("${}", balance))
-                                .color_named(NamedColor::Green),
-                        ),
-                )
-                .await;
-            Ok(())
-        })
+impl CommandHandler for BalanceCommandHandler {
+    fn handle(
+        &self,
+        sender: pumpkin_plugin_api::command::CommandSender,
+        _server: pumpkin_plugin_api::Server,
+        _args: pumpkin_plugin_api::command::ConsumedArgs,
+    ) -> pumpkin_plugin_api::Result<i32, CommandError> {
+        let msg = TextComponent::text("💰 Your Balance: ")
+            .color_named(NamedColor::Gold)
+            .add_child(
+                TextComponent::text("$250.00 Coins")
+                    .color_named(NamedColor::Green),
+            );
+        sender.send_message(msg);
+        Ok(0)
     }
 }
 
-#[plugin_method]
-async fn on_load(&mut self, server: Arc<Context>) -> Result<(), String> {
-    server.init_log();
-    log::info!("[RainyEconomy] Loading Economy system v1.0.0...");
+struct RainyEconomy;
 
-    let bal_cmd = CommandTree::new(["bal", "balance"], "Check your coin balance")
-        .execute(BalanceCommandExecutor);
-    let perm = Permission::new("rainy.balance", "Check balance", PermissionDefault::Allow);
+impl Plugin for RainyEconomy {
+    fn new() -> Self {
+        RainyEconomy
+    }
 
-    server.register_permission(perm).await?;
-    server.register_command(bal_cmd, "rainy.balance").await;
+    fn metadata(&self) -> PluginMetadata {
+        PluginMetadata {
+            name: "rainy-economy".into(),
+            version: "1.0.0".into(),
+            authors: vec!["RainyMCS Team".into()],
+            description: "Player balances and economy system".into(),
+            dependencies: vec![],
+            permissions: vec![],
+        }
+    }
 
-    log::info!("[RainyEconomy] Registered /bal and /balance!");
-    Ok(())
-}
+    fn on_load(&mut self, context: Context) -> pumpkin_plugin_api::Result<()> {
+        let perm_bal = "rainy.balance";
+        let _ = context.register_permission(&Permission {
+            node: perm_bal.into(),
+            description: "Access /bal and /balance".into(),
+            default: PermissionDefault::Allow,
+            children: Vec::new(),
+        });
+        let bal_cmd = Command::new(&["bal".to_string(), "balance".to_string()], "Check your balance")
+            .execute(BalanceCommandHandler);
+        context.register_command(bal_cmd, perm_bal);
 
-#[plugin_impl]
-pub struct RainyEconomy {}
-
-impl RainyEconomy {
-    pub fn new() -> Self {
-        RainyEconomy {}
+        tracing::info!("[RainyEconomy] Loaded /bal and /balance!");
+        Ok(())
     }
 }
 
-impl Default for RainyEconomy {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+register_plugin!(RainyEconomy);

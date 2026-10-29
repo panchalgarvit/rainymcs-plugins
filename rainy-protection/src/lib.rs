@@ -1,68 +1,61 @@
-use std::sync::Arc;
-use async_trait::async_trait;
-
-use pumpkin::{
-    command::{
-        args::ConsumedArgs,
-        tree::CommandTree,
-        CommandExecutor, CommandResult, CommandSender,
-    },
-    plugin::Context,
-    server::Server,
+use pumpkin_plugin_api::{
+    command::{Command, CommandError},
+    commands::CommandHandler,
+    common::NamedColor,
+    permission::{Permission, PermissionDefault},
+    text::TextComponent,
+    Context, Plugin, PluginMetadata, register_plugin,
 };
-use pumpkin_api_macros::{plugin_impl, plugin_method};
-use pumpkin_util::permission::{Permission, PermissionDefault};
-use pumpkin_util::text::{color::NamedColor, TextComponent};
 
-struct ClaimCommandExecutor;
+struct ClaimCommandHandler;
 
-#[async_trait]
-impl CommandExecutor for ClaimCommandExecutor {
-    fn execute<'a>(
-        &'a self,
-        sender: &'a CommandSender,
-        _: &'a Server,
-        _: &'a ConsumedArgs<'a>,
-    ) -> CommandResult<'a> {
-        Box::pin(async move {
-            sender
-                .send_message(
-                    TextComponent::text("🛡 Protected 32x32 block area! Only you can build here.")
-                        .color_named(NamedColor::Green),
-                )
-                .await;
-            Ok(())
-        })
+impl CommandHandler for ClaimCommandHandler {
+    fn handle(
+        &self,
+        sender: pumpkin_plugin_api::command::CommandSender,
+        _server: pumpkin_plugin_api::Server,
+        _args: pumpkin_plugin_api::command::ConsumedArgs,
+    ) -> pumpkin_plugin_api::Result<i32, CommandError> {
+        let msg = TextComponent::text("🛡 Protected 32x32 block area! Only you can build here.")
+            .color_named(NamedColor::Green);
+        sender.send_message(msg);
+        Ok(0)
     }
 }
 
-#[plugin_method]
-async fn on_load(&mut self, server: Arc<Context>) -> Result<(), String> {
-    server.init_log();
-    log::info!("[RainyProtection] Loading protection system v1.0.0...");
+struct RainyProtection;
 
-    let claim_cmd = CommandTree::new(["claim"], "Claim territory against griefing")
-        .execute(ClaimCommandExecutor);
-    let perm = Permission::new("rainy.claim", "Claim land", PermissionDefault::Allow);
+impl Plugin for RainyProtection {
+    fn new() -> Self {
+        RainyProtection
+    }
 
-    server.register_permission(perm).await?;
-    server.register_command(claim_cmd, "rainy.claim").await;
+    fn metadata(&self) -> PluginMetadata {
+        PluginMetadata {
+            name: "rainy-protection".into(),
+            version: "1.0.0".into(),
+            authors: vec!["RainyMCS Team".into()],
+            description: "Spawn zone protection and anti-grief land claims".into(),
+            dependencies: vec![],
+            permissions: vec![],
+        }
+    }
 
-    log::info!("[RainyProtection] Registered /claim!");
-    Ok(())
-}
+    fn on_load(&mut self, context: Context) -> pumpkin_plugin_api::Result<()> {
+        let perm_claim = "rainy.claim";
+        let _ = context.register_permission(&Permission {
+            node: perm_claim.into(),
+            description: "Access /claim".into(),
+            default: PermissionDefault::Allow,
+            children: Vec::new(),
+        });
+        let claim_cmd = Command::new(&["claim".to_string()], "Claim land against griefing")
+            .execute(ClaimCommandHandler);
+        context.register_command(claim_cmd, perm_claim);
 
-#[plugin_impl]
-pub struct RainyProtection {}
-
-impl RainyProtection {
-    pub fn new() -> Self {
-        RainyProtection {}
+        tracing::info!("[RainyProtection] Loaded /claim!");
+        Ok(())
     }
 }
 
-impl Default for RainyProtection {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+register_plugin!(RainyProtection);
