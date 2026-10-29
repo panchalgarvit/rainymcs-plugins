@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "rainy-essentials",
+    "rainy-rtp",
+    "rainy-economy",
+    "rainy-protection",
+    "rainy-chat"
+]
+resolver = "2"

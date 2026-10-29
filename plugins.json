@@ -1,0 +1,52 @@
+[
+  {
+    "id": "rainy-essentials",
+    "name": "RainyEssentials",
+    "description": "Essential server commands: /spawn, /home, /sethome, /tpa, /tpaccept, and welcome greetings.",
+    "version": "1.0.0",
+    "author": "RainyMCS Team",
+    "category": "Gameplay",
+    "download_url": "https://github.com/panchalgarvit/rainymcs-plugins/releases/download/v1.0.0/rainy_essentials.wasm",
+    "file_name": "rainy_essentials.wasm"
+  },
+  {
+    "id": "rainy-rtp",
+    "name": "RainyRTP",
+    "description": "Random wilderness teleportation command (/rtp, /wild) with safe landing checks.",
+    "version": "1.0.0",
+    "author": "RainyMCS Team",
+    "category": "Utility",
+    "download_url": "https://github.com/panchalgarvit/rainymcs-plugins/releases/download/v1.0.0/rainy_rtp.wasm",
+    "file_name": "rainy_rtp.wasm"
+  },
+  {
+    "id": "rainy-economy",
+    "name": "RainyEconomy",
+    "description": "Player currency, wallet balances (/bal, /balance), and coin transactions.",
+    "version": "1.0.0",
+    "author": "RainyMCS Team",
+    "category": "Economy",
+    "download_url": "https://github.com/panchalgarvit/rainymcs-plugins/releases/download/v1.0.0/rainy_economy.wasm",
+    "file_name": "rainy_economy.wasm"
+  },
+  {
+    "id": "rainy-protection",
+    "name": "RainyProtection",
+    "description": "Anti-griefing land claims (/claim) and automatic spawn area building protection.",
+    "version": "1.0.0",
+    "author": "RainyMCS Team",
+    "category": "Security",
+    "download_url": "https://github.com/panchalgarvit/rainymcs-plugins/releases/download/v1.0.0/rainy_protection.wasm",
+    "file_name": "rainy_protection.wasm"
+  },
+  {
+    "id": "rainy-chat",
+    "name": "RainyChat",
+    "description": "Server-wide announcements (/broadcast), chat prefixes ([Host], [Member]), and formatting.",
+    "version": "1.0.0",
+    "author": "RainyMCS Team",
+    "category": "Chat & Admin",
+    "download_url": "https://github.com/panchalgarvit/rainymcs-plugins/releases/download/v1.0.0/rainy_chat.wasm",
+    "file_name": "rainy_chat.wasm"
+  }
+]
