@@ -41,7 +41,7 @@ impl Plugin for RainyChat {
         }
     }
 
-    fn on_load(&mut self, context: Context) -> pumpkin_plugin_api::Result<()> {
+    fn on_load(&self, context: Context) -> pumpkin_plugin_api::Result<()> {
         let perm_bc = "rainy.broadcast";
         let _ = context.register_permission(&Permission {
             node: perm_bc.into(),

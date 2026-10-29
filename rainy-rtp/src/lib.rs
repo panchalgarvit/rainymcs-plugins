@@ -46,7 +46,7 @@ impl Plugin for RainyRtp {
         }
     }
 
-    fn on_load(&mut self, context: Context) -> pumpkin_plugin_api::Result<()> {
+    fn on_load(&self, context: Context) -> pumpkin_plugin_api::Result<()> {
         let perm_rtp = "rainy.rtp";
         let _ = context.register_permission(&Permission {
             node: perm_rtp.into(),

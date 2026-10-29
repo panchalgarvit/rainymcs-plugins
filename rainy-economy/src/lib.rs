@@ -45,7 +45,7 @@ impl Plugin for RainyEconomy {
         }
     }
 
-    fn on_load(&mut self, context: Context) -> pumpkin_plugin_api::Result<()> {
+    fn on_load(&self, context: Context) -> pumpkin_plugin_api::Result<()> {
         let perm_bal = "rainy.balance";
         let _ = context.register_permission(&Permission {
             node: perm_bal.into(),

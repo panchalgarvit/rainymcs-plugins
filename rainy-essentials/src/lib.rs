@@ -73,7 +73,7 @@ impl Plugin for RainyEssentials {
         }
     }
 
-    fn on_load(&mut self, context: Context) -> pumpkin_plugin_api::Result<()> {
+    fn on_load(&self, context: Context) -> pumpkin_plugin_api::Result<()> {
         let perm_spawn = "rainy.spawn";
         let _ = context.register_permission(&Permission {
             node: perm_spawn.into(),

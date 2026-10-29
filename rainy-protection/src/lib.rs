@@ -41,7 +41,7 @@ impl Plugin for RainyProtection {
         }
     }
 
-    fn on_load(&mut self, context: Context) -> pumpkin_plugin_api::Result<()> {
+    fn on_load(&self, context: Context) -> pumpkin_plugin_api::Result<()> {
         let perm_claim = "rainy.claim";
         let _ = context.register_permission(&Permission {
             node: perm_claim.into(),
